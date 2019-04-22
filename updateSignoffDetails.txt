@@ -1,0 +1,21 @@
+def call(body){
+	def pipelineParams= [:]
+	body.resolveStrategy = Closure.DELEGATE_FIRST
+	body.delegate = pipelineParams
+	body()
+		script{
+			env.jenkinsJobName = "${pipelineParams.jenkinJobName}"
+			env.buildNumber = "${pipelineParams.buildNumber}"
+			env.environmentName = "${pipelineParams.environmentName}"
+
+			env.signOff = "${pipelineParams.testingsignoff}"
+			env.signoffdate = "${pipelineParams.signoffDate}
+			env.signedOffby = "${pipelineParams.signedOffBy}"
+			
+			env.jsonInput = '{\'buildnumber\''+buildnumber+'\','jenkinsjobname\':\''+jenkinsjobname+'\',\'updateJSON\':{\''+environmentName+'_Testing_Signoff\':\''+signOff+'\',\''+environmentName +'_Signedoff_By\':\''+signedOffby+ '\',\''+environmentName+'_Signoff_Date\':\''+ signoffDate+'\'}}'
+
+			echo "Updating " + environmentName + "Approval details to MongoDB..."
+			powershell 'python ./AuditGateway.py updatePipelineData("$env:buildNumber", "$env:jenkinsJobName","$env:jsonInput")'
+		}
+	}
+		

@@ -1,0 +1,88 @@
+import requests
+import json
+import base64
+import time
+import sys
+
+from requests.auth import HTTPBasicAuth
+
+def postPipelineData(mongodict)
+    #mongodict= {"Jenkins_Job_Name":"Test","Build_Number":22}
+    convertedstring = mongodict.replace('\'','"')
+    print('Preparing to post the json data....')
+    #print('JSON to write into DB:',convertedstring,'\n')
+
+   mongoresponse =  APIGet("http://bi-pipeline-gen-mongo-connector.cfn.travp.net/api/getPipelineData/"+convertedstring)
+   print('Response Code:', mongoresponse.status_code)
+   print(mongoresponse)
+
+def getPipelineDataByJobNameAndBuildNumber(buildNumber, jobName, fieldsToget):
+
+	mongoresponse = APIGet("http://bi-pipeline-gen-mongo-connector.cfn.travp.net/api/getPipelineData/"+buildNumber+"/"+jobName)
+   try:
+    output = mongoresponse.json()
+   except:
+	print("please check Jobname/BuildNumber. No such job "+jobName+"with build number"+buildNumber+"is present")
+	sys.exit()
+   for fields in fieldsToget.split(","):
+	try:
+		print(output[fields])
+	except:
+		print("null")
+
+
+def getPipelineDataByJobName(jobName):
+	mongoresponse1 = APIGet("http://bi-pipeline-gen-mongo-connector.cfn.travp.net/api/getAllPipelineData/"+jobName)
+        output1 = mongoresponse1.json()
+        print('Writing output to file...')
+        print(output1,file=open("output.txt","w"))
+
+def updatePipelineData(buildnumber, jenkinsjobname, mongodict):
+	#inputdict={"buildnumber:"12","jenkinsjobname":"TestJobName_12","updateJSON":{"MO_Approval":"testing"}}
+	inputdict = mongodict.replace('\'','"')
+	#inputdict = json.dumps(convertedstring)
+
+	print('Preparing to update the JSON data...')
+	print('\n\n\n JSON to write into DB: ', inputdict,'\n\n\n')
+
+	updateresponse = APIPost("http://bi-pipeline-gen-mongo-connector.cfn.travp.net/api/updatePipelineData/"+inputdict)
+	print('Response Code:', updateresponse.status_code)
+	print(updateresponse)
+
+#Defining REST API functions
+#Perform POST
+def APIPost(url,payload):
+	headers={'accept' : 'application/json;odata=verbose', 'content-type' : 'application/json;odata=verbose', 'odata' : 'verbose'}
+	#payload = json.dumps(dataDict)
+	response = requests.post(url, data=payload,headers=headers, verify=False)
+	if response.status_code !=200:
+	    if response.status_code == 201 or response.status_code == 204 or response.status_code == 200
+		print(response.status_code)
+	    else:
+		print(response)
+		sys.exit(response)
+	return response
+
+#Perform GET
+def APIGet(url):
+	response = requests.get(url)
+	if response.status_code !=200:
+	    if response.status_code == 202 or response.status_code == 204 or response.status_code == 200
+		print(response.status_code)
+	    else:
+		print(response)
+		sys.exit(response)
+	return response	
+
+if __name__ == "__main__":
+	#calls the respective functions based on arg length
+	if len(sys.argv)==5:
+	   globals()[sys.argv[1]](sys.argv[2],sys.argv[3],sys.argv[4])
+	elif len(sys.argv)==4:
+	   globals()[sys.argv[1]](sys.argv[2],sys.argv[3])
+	elif len(sys.argv)==3:
+	   globals()[sys.argv[1]](sys.argv[2])
+
+
+
+
